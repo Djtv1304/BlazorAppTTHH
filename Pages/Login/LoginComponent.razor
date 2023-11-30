@@ -1,0 +1,108 @@
+﻿@page "/Login"
+@using System.Text
+@using Newtonsoft.Json
+@using Models
+@using PopUp
+@using System.Net
+@inject HttpClient Http
+
+<BlazorAppPrub.Pages.PopUp.PopUpComponent @ref="popupRef" />
+
+<EditForm Model="@usuarioLogin" OnValidSubmit="CallApi">
+
+    <!-- Con la etiqueta DataAnnotationsValidator aplico las anotaciones de validacion que tengo en la clase de Usuario -->
+    <DataAnnotationsValidator/>
+
+    <div class="fondo-imagen d-flex flex-column gap-4">
+
+        <header>
+            <div class="d-flex flex-row flex-wrap align-items-center justify-content-around p-3 font-raleway-class">
+                <h2 class="header-responsive">UDLA</h2>
+                <div class="fondo-logo-UDLA"></div>
+                <h2 class="header-responsive">Grupo 1</h2>
+            </div>
+        </header>
+
+        <div class="d-flex justify-content-center font-raleway-class">
+            <div class="d-flex flex-wrap flex-column justify-content-center align-items-center gap-4 w-50 col-sm-12 col-md-9 p-3 width-responsive">
+
+                <!-- Usuario -->
+                <div class="d-flex flex-column w-75 gap-2">
+                    <label>Usuario</label>
+                    <input type="text" name="username" required id="txt-username" placeholder="Ingrese su usuario." class="form-control" @bind="usuarioLogin._username"/>
+                    <!-- Con esta etiqueta ValidationMessage y su atributo For despliego el mensaje de DataAnotation de la clase Usuario para el atributo que haya indicado en la etiqueta For -->
+                    <ValidationMessage For="( () => usuarioLogin._username )"/>
+                </div>
+                <!-- Contrasenia -->
+                <div class="d-flex flex-column w-75 gap-2">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required id="txt-password" placeholder="Ingrese su contraseña." class="form-control" @bind="usuarioLogin._password">
+                    <ValidationMessage For="( () => usuarioLogin._password )" />
+                </div>
+
+                <div class="d-flex flex-column gap-3 w-75">
+                    <!-- Button -->
+                    <button type="submit" class="btn btn-info">Iniciar Sesión</button>
+                    <!-- Create account / Help? -->
+                    <div class="d-flex gap-5 justify-content-between text-center">
+                        <a href="#" class="text-decoration-none">Crear una cuenta</a>
+                        <a href="#" class="text-decoration-none">Necesitas ayuda?</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</EditForm>
+
+@code {
+
+    Usuario usuarioLogin = new Usuario();
+
+    private PopUpComponent popupRef; // Aquí cambiamos Popup por PopUpComponent 
+
+
+    private async Task CallApi()
+    {
+        // Creo el usuario con las credenciales
+        var usuario = new Usuario { _username = usuarioLogin._username, _password = usuarioLogin._password };
+        // Construyo la petición GET las credenciales
+        var url = $"http://apiservicios.ecuasolmovsa.com:3009/api/Usuarios?usuario={usuario._username}&password={usuario._password}";
+        // Envío la petición y obtengo la respuesta
+        var response = await Http.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Guardo el resultado en result
+            var result = await response.Content.ReadAsStringAsync();
+            // Mapeo el resultado en un objeto EmisorUsuario
+            var usuarioAuthenticated = JsonConvert.DeserializeObject<List<EmisorUsuario>>(result)?.FirstOrDefault();
+
+
+            popupRef.Show($"Ingreso exitoso, bienvenido {usuarioAuthenticated?.NOMBREUSUARIO}!", "Éxito");
+        }
+        else
+        {
+            // Switch para mostrar el mensaje dependiendo del tipo de código de respuesta
+
+            switch (response.StatusCode)
+            {
+                case HttpStatusCode.BadRequest:
+                    popupRef.Show("Solicitud incorrecta", "Error");
+                    break;
+                case HttpStatusCode.Unauthorized:
+                    popupRef.Show("Credenciales inválidas", "Error");
+                    break;
+                case HttpStatusCode.InternalServerError:
+                    popupRef.Show("Error del servidor", "Error");
+                    break;
+                default:
+                    popupRef.Show("Error desconocido", "Error");
+                    break;
+            }
+        }
+    }
+
+}

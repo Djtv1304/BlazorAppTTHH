@@ -1,0 +1,55 @@
+.fondo-imagen {
+
+    background-image: url(https://i.ibb.co/Pm79hnB/fondo-Login.webp);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 100vh;
+
+}
+
+.fondo-imagen .fondo-logo-UDLA {
+
+    background-image: url(https://i.ibb.co/M1bw2Fj/Logo-UDLA-Blanco.png);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    height: 15vh;
+    width: 25%;
+
+}
+
+.font-raleway-class {
+
+    font-family: 'Raleway';
+
+}
+
+@media (max-width: 768px) {
+
+    .width-responsive {
+
+        width: 100% !important;
+
+    }
+
+    .fondo-imagen {
+
+        gap: 0 !important;
+
+    }
+
+    .fondo-imagen .fondo-logo-UDLA {
+
+        width: 100%;
+
+    }
+
+    .fondo-imagen .header-responsive {
+
+        display: none;
+        visibility: hidden;
+
+    }
+
+}
