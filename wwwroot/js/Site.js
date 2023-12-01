@@ -1,7 +1,7 @@
 ﻿
-function viewProduct(productName, productDescription) {
-    $("#viewProductName").text(productName);
-    $("#viewProductDescription").text(productDescription);
+function viewProduct(headerModalText, bodyModalText) {
+    $("#viewProductName").text(headerModalText);
+    $("#viewProductDescription").text(bodyModalText);
     $('#viewProductModal').modal('show');
 }
 

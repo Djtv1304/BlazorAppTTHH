@@ -2,11 +2,11 @@
 @using System.Text
 @using Newtonsoft.Json
 @using Models
-@using PopUp
 @using System.Net
+@inject IJSRuntime JSRuntime
 @inject HttpClient Http
 
-<BlazorAppPrub.Pages.PopUp.PopUpComponent @ref="popupRef" />
+<PopUpComponent @ref="popupRef" />
 
 <EditForm Model="@usuarioLogin" OnValidSubmit="CallApi">
 
@@ -57,6 +57,24 @@
 
 </EditForm>
 
+<div class="modal fade" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewProductName"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="hideProductModal()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="viewProductDescription"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideProductModal()">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @code {
 
     Usuario usuarioLogin = new Usuario();
@@ -66,43 +84,59 @@
 
     private async Task CallApi()
     {
-        // Creo el usuario con las credenciales
         var usuario = new Usuario { _username = usuarioLogin._username, _password = usuarioLogin._password };
-        // Construyo la petición GET las credenciales
         var url = $"http://apiservicios.ecuasolmovsa.com:3009/api/Usuarios?usuario={usuario._username}&password={usuario._password}";
-        // Envío la petición y obtengo la respuesta
         var response = await Http.GetAsync(url);
 
         if (response.IsSuccessStatusCode)
         {
-            // Guardo el resultado en result
             var result = await response.Content.ReadAsStringAsync();
-            // Mapeo el resultado en un objeto EmisorUsuario
+            Console.WriteLine(result);
+
+            if (result.Contains("error", StringComparison.OrdinalIgnoreCase))
+            {
+
+                await JSRuntime.InvokeVoidAsync("viewProduct", "Credenciales Incorrectas", "La contraseña o el usuario es incorrecto!");
+                return;
+
+            }
+
             var usuarioAuthenticated = JsonConvert.DeserializeObject<List<EmisorUsuario>>(result)?.FirstOrDefault();
 
+            if (usuarioAuthenticated.OBSERVACION.Contains("CONTRASEÑA INVALIDA", StringComparison.OrdinalIgnoreCase))
+            {
+                
+                await JSRuntime.InvokeVoidAsync("viewProduct", "Credenciales Incorrectas", "La contraseña o el usuario es incorrecto!");
+                return;
 
-            popupRef.Show($"Ingreso exitoso, bienvenido {usuarioAuthenticated?.NOMBREUSUARIO}!", "Éxito");
+            }
+
+            await JSRuntime.InvokeVoidAsync("viewProduct", "Éxito", $"Ingreso exitoso, bienvenido {usuarioAuthenticated?.NOMBREUSUARIO}!");
         }
         else
         {
-            // Switch para mostrar el mensaje dependiendo del tipo de código de respuesta
+            string headerText = "Error";
+            string bodyText;
 
             switch (response.StatusCode)
             {
                 case HttpStatusCode.BadRequest:
-                    popupRef.Show("Solicitud incorrecta", "Error");
+                    bodyText = "Solicitud incorrecta";
                     break;
                 case HttpStatusCode.Unauthorized:
-                    popupRef.Show("Credenciales inválidas", "Error");
+                    bodyText = "Credenciales inválidas";
                     break;
                 case HttpStatusCode.InternalServerError:
-                    popupRef.Show("Error del servidor", "Error");
+                    bodyText = "Error del servidor";
                     break;
                 default:
-                    popupRef.Show("Error desconocido", "Error");
+                    bodyText = "Error desconocido";
                     break;
             }
+
+            await JSRuntime.InvokeVoidAsync("viewProduct", headerText, bodyText);
         }
     }
+
 
 }
