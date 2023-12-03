@@ -1,22 +1,34 @@
 ﻿
 function viewProduct(headerModalText, bodyModalText) {
-    var modal = $('#viewProductModal');
-    if (modal.length) {
-        $("#viewProductName").text(headerModalText);
-        $("#viewProductDescription").text(bodyModalText);
-        modal.modal('show');
-    } else {
-        console.error('Modal not found');
-    }
+
+    $(document).ready(function () {
+
+        var modal = $('#viewProductModal');
+        if (modal.length) {
+            $("#viewProductName").text(headerModalText);
+            $("#viewProductDescription").text(bodyModalText);
+            modal.modal('show');
+        } else {
+            console.error('Modal not found');
+        }
+
+    });
+
 }
 
 function hideProductModal() {
-    var modal = $('#viewProductModal');
-    if (modal.length) {
-        modal.modal('hide');
-    } else {
-        console.error('Modal not found');
-    }
+
+    $(document).ready(function () {
+
+        var modal = $('#viewProductModal');
+        if (modal.length) {
+            modal.modal('hide');
+        } else {
+            console.error('Modal not found');
+        }
+
+    });
+
 }
 
 

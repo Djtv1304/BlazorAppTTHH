@@ -1,5 +1,6 @@
 ﻿@page "/Login"
 @using System.Text
+@inject Microsoft.Extensions.Logging.ILogger<LoginComponent> Logger
 @using Newtonsoft.Json
 @using Models
 @using System.Net
@@ -59,7 +60,7 @@
 
 </EditForm>
 
-<div class="modal fade" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductLabel" aria-hidden="true">
+<div class="modal fade font-raleway-class" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -70,18 +71,20 @@
             </div>
             <div class="modal-body" id="viewProductDescription">
                 <!--Deberia mostrarse solo cuando hay habido autentificacion-->
+                <p>Por favor escoja la compañia a la que pertenece.-</p>
                 @if (usuarioLogin.isAuthenticated && listaEmisores.Count() > 0 )
                 {
                     
-                        <select class="form-select" aria-label="Default select example" @bind="numeroCompaniaSeleccionada">
-                            <option selected>Elija su compañia!</option>
-                            @foreach (var emisor in @listaEmisores)
-                            {
-                                <span>
-                                    <option value="@emisor.Codigo">@emisor.Codigo - @emisor.NombreEmisor</option>
-                                </span>
-                            }
-                        </select>
+                    <select class="form-select" aria-label="Default select example" @bind="numeroCompaniaSeleccionada">
+                        <option selected>Elija su compañia!</option>
+                        @foreach (var emisor in @listaEmisores)
+                        {
+
+                            <option value="@emisor.Codigo">@emisor.Codigo - @emisor.NombreEmisor</option>
+                               
+                        }
+                    </select>
+                    
                 }
             </div>
             <div class="modal-footer">
@@ -137,10 +140,14 @@
                 await SessionStorage.SetItemAsync("emisorEstado", emisorFounded.ESTADO); // Estado 'A' significa activo
                 await SessionStorage.SetItemAsync("emisorNumero", emisorFounded.Emisor);
 
-                // En caso de autenticación correcta se llena el select con las opciones de compañias recibidas mediante la API
-                listaEmisores = await APIService.GetEmisor();
+                if (listaEmisores.Count() <= 0)
+                {
+                    
+                    // En caso de autenticación correcta se llena el select con las opciones de compañias recibidas mediante la API
+                    listaEmisores = await APIService.GetEmisor();
 
-                StateHasChanged();
+                }
+
                 await JSRuntime.InvokeVoidAsync("viewProduct", "Éxito", $"Ingreso exitoso, bienvenido {emisorFounded?.NOMBREUSUARIO}!");
                 return;
 
@@ -152,7 +159,7 @@
         catch (Exception error)
         {
 
-            Console.WriteLine($"Error en CallApi: {error.Message}");
+            Logger.LogError($"Error en CallApi: {error.Message}");
 
         }
 
@@ -163,14 +170,13 @@
         try
         {
 
-            await cerrarModal();
-
             string emisorNumeroSession = await SessionStorage.GetItemAsync<string>("emisorNumero");
 
             if (listaEmisores.Count() > 0 && int.TryParse(emisorNumeroSession, out int emisorNumero) && int.Parse(numeroCompaniaSeleccionada) == emisorNumero)
             {
 
                 // Redirijo al home en caso de que la compañia seleccionada haya sido la correcta
+                await cerrarModal();
                 Router.NavigateTo("/home");
                 return;
 
@@ -180,12 +186,12 @@
             StateHasChanged();
             await SessionStorage.ClearAsync();
             await JSRuntime.InvokeVoidAsync("viewProduct", "Compañia Incorrecta", "Usted no pertenece a la compañia seleccionada, por favor intente iniciar sesión nuevamente.");
-            return;
+
         } catch(Exception error)
         {
             
-            Console.WriteLine($"Error en CallApi: {error.Message}");
-            
+            Logger.LogError($"Error en validarEmisorSeleccionado: {error.Message}");
+
         }
 
     }
