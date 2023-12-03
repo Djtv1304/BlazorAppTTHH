@@ -10,7 +10,7 @@ namespace BlazorAppPrub.Models
         [Required(AllowEmptyStrings = false,ErrorMessage = "La contraseña es requerida!")]
         public string _password { get; set; }
 
-        //public bool isAuthenticated { get; set; }
+        public bool isAuthenticated { get; set; }
 
     }
 }

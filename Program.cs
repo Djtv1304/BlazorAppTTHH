@@ -1,3 +1,6 @@
+using BlazorAppPrub.APIService;
+using Blazored.SessionStorage;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,10 @@ builder.Services.AddServerSideBlazor();
 
 // Agrega HttpClient como un servicio
 builder.Services.AddScoped<HttpClient>();
+builder.Services.AddScoped<IAPIService, APIService>();
+
+// Agrega los servicios de Blazored
+builder.Services.AddBlazoredSessionStorage();
 
 var app = builder.Build();
 

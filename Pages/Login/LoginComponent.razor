@@ -3,10 +3,12 @@
 @using Newtonsoft.Json
 @using Models
 @using System.Net
+@using APIService
 @inject IJSRuntime JSRuntime
 @inject HttpClient Http
-
-<PopUpComponent @ref="popupRef" />
+@inject IAPIService APIService
+@inject Blazored.SessionStorage.ISessionStorageService SessionStorage
+@inject NavigationManager Router
 
 <EditForm Model="@usuarioLogin" OnValidSubmit="CallApi">
 
@@ -66,76 +68,133 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body" id="viewProductDescription"></div>
+            <div class="modal-body" id="viewProductDescription">
+                <!--Deberia mostrarse solo cuando hay habido autentificacion-->
+                @if (usuarioLogin.isAuthenticated && listaEmisores.Count() > 0 )
+                {
+                    
+                        <select class="form-select" aria-label="Default select example" @bind="numeroCompaniaSeleccionada">
+                            <option selected>Elija su compañia!</option>
+                            @foreach (var emisor in @listaEmisores)
+                            {
+                                <span>
+                                    <option value="@emisor.Codigo">@emisor.Codigo - @emisor.NombreEmisor</option>
+                                </span>
+                            }
+                        </select>
+                }
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="hideProductModal()">Cerrar</button>
+                @if (usuarioLogin.isAuthenticated)
+                {
+                    <div> 
+                        <button type="button" class="btn btn-secondary" @onclick="validarEmisorSeleccionado">Continuar</button>
+                    </div>
+                }
             </div>
 
         </div>
     </div>
 </div>
 
+
 @code {
 
     Usuario usuarioLogin = new Usuario();
-
-    private PopUpComponent popupRef; // Aquí cambiamos Popup por PopUpComponent 
-
+    List<Emisor> listaEmisores = new List<Emisor>();
+    string numeroCompaniaSeleccionada = string.Empty;
 
     private async Task CallApi()
     {
-        var usuario = new Usuario { _username = usuarioLogin._username, _password = usuarioLogin._password };
-        var url = $"http://apiservicios.ecuasolmovsa.com:3009/api/Usuarios?usuario={usuario._username}&password={usuario._password}";
-        var response = await Http.GetAsync(url);
-
-        if (response.IsSuccessStatusCode)
+        try 
         {
-            var result = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(result);
+            await cerrarModal();
 
-            if (result.Contains("error", StringComparison.OrdinalIgnoreCase))
+            // El usuario debe pasar los filtros para autenticarse
+            usuarioLogin.isAuthenticated = false;
+
+            EmisorUsuario emisorFounded =  await APIService.UserAuthentication(usuarioLogin._username, usuarioLogin._password);
+
+            if (emisorFounded != null )
             {
 
-                await JSRuntime.InvokeVoidAsync("viewProduct", "Credenciales Incorrectas", "La contraseña o el usuario es incorrecto!");
+                if (emisorFounded.OBSERVACION.Contains("CONTRASEÑA INVALIDA", StringComparison.OrdinalIgnoreCase))
+                {
+
+                    await JSRuntime.InvokeVoidAsync("viewProduct", "Credenciales Incorrectas", "La contraseña o el usuario son incorrectas!");
+                    return;
+
+                }
+
+                // El usuario es autenticado correctamente y se muestra un mensaje de confirmación
+                usuarioLogin.isAuthenticated = true;
+
+                // Se guarda en variables de sesión el nombre, perfil, observación y estado del emisor que se autenticó correctamente
+                await SessionStorage.SetItemAsync("emisorNombre", emisorFounded.NOMBREUSUARIO);
+                await SessionStorage.SetItemAsync("emisorPerfil", emisorFounded.PERFIL);
+                await SessionStorage.SetItemAsync("emisorObservacion", emisorFounded.OBSERVACION);
+                await SessionStorage.SetItemAsync("emisorEstado", emisorFounded.ESTADO); // Estado 'A' significa activo
+                await SessionStorage.SetItemAsync("emisorNumero", emisorFounded.Emisor);
+
+                // En caso de autenticación correcta se llena el select con las opciones de compañias recibidas mediante la API
+                listaEmisores = await APIService.GetEmisor();
+
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("viewProduct", "Éxito", $"Ingreso exitoso, bienvenido {emisorFounded?.NOMBREUSUARIO}!");
                 return;
 
             }
 
-            var usuarioAuthenticated = JsonConvert.DeserializeObject<List<EmisorUsuario>>(result)?.FirstOrDefault();
+            await JSRuntime.InvokeVoidAsync("viewProduct", "Error", "Hubo un error al realizar la consulta!\n" + 
+                                        "Por favor verifique las credenciales ingresadas o ingrese nuevamente más tarde");
+        }
+        catch (Exception error)
+        {
 
-            if (usuarioAuthenticated.OBSERVACION.Contains("CONTRASEÑA INVALIDA", StringComparison.OrdinalIgnoreCase))
+            Console.WriteLine($"Error en CallApi: {error.Message}");
+
+        }
+
+    }
+
+    private async Task validarEmisorSeleccionado()
+    {
+        try
+        {
+
+            await cerrarModal();
+
+            string emisorNumeroSession = await SessionStorage.GetItemAsync<string>("emisorNumero");
+
+            if (listaEmisores.Count() > 0 && int.TryParse(emisorNumeroSession, out int emisorNumero) && int.Parse(numeroCompaniaSeleccionada) == emisorNumero)
             {
-                
-                await JSRuntime.InvokeVoidAsync("viewProduct", "Credenciales Incorrectas", "La contraseña o el usuario es incorrecto!");
+
+                // Redirijo al home en caso de que la compañia seleccionada haya sido la correcta
+                Router.NavigateTo("/home");
                 return;
 
             }
 
-            await JSRuntime.InvokeVoidAsync("viewProduct", "Éxito", $"Ingreso exitoso, bienvenido {usuarioAuthenticated?.NOMBREUSUARIO}!");
-        }
-        else
+            usuarioLogin.isAuthenticated = false;
+            StateHasChanged();
+            await SessionStorage.ClearAsync();
+            await JSRuntime.InvokeVoidAsync("viewProduct", "Compañia Incorrecta", "Usted no pertenece a la compañia seleccionada, por favor intente iniciar sesión nuevamente.");
+            return;
+        } catch(Exception error)
         {
-            string headerText = "Error";
-            string bodyText;
-
-            switch (response.StatusCode)
-            {
-                case HttpStatusCode.BadRequest:
-                    bodyText = "Solicitud incorrecta";
-                    break;
-                case HttpStatusCode.Unauthorized:
-                    bodyText = "Credenciales inválidas";
-                    break;
-                case HttpStatusCode.InternalServerError:
-                    bodyText = "Error del servidor";
-                    break;
-                default:
-                    bodyText = "Error desconocido";
-                    break;
-            }
-
-            await JSRuntime.InvokeVoidAsync("viewProduct", headerText, bodyText);
+            
+            Console.WriteLine($"Error en CallApi: {error.Message}");
+            
         }
+
+    }
+
+    private async Task cerrarModal()
+    {
+
+        await JSRuntime.InvokeVoidAsync("hideProductModal");
+
     }
 
 
