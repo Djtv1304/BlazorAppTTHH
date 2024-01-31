@@ -9,5 +9,13 @@ namespace BlazorAppPrub.APIService
 
         public Task<List<Emisor>> GetEmisor();
 
+        Task<List<CentroCostos>> GetCentroCostos();
+
+        Task<CentroCostos> InsertCentroCostos(CentroCostos newCentroCostos);
+
+        Task UpdateCentroCostos(CentroCostos CentroCostosToUpdate);
+
+        Task<CentroCostos> DeleteCentroCostos(CentroCostos CentroCostosToDelete);
+
     }
 }

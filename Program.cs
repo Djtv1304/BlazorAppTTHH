@@ -9,6 +9,7 @@ builder.Services.AddServerSideBlazor();
 
 // Agrega HttpClient como un servicio
 builder.Services.AddScoped<HttpClient>();
+builder.Services.AddScoped<APIServiceProxy>();
 builder.Services.AddScoped<IAPIService, APIService>();
 
 // Agrega los servicios de Blazored

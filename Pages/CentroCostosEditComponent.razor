@@ -1,0 +1,78 @@
+﻿@page "/centrocostosedit/{id:int}"
+@using BlazorAppPrub.APIService
+@using Models
+
+@inject APIServiceProxy APIService
+@inject NavigationManager Router
+
+<div class="d-flex flex-nowrap flex-column gap-2 p-4">
+    <h3>Editar Centro Costos</h3>
+
+    <EditForm Model="@centroCostos" method="POST" OnValidSubmit="UpdateCentroCostos">
+
+        <DataAnnotationsValidator />
+
+        <div class="form-group mb-3">
+
+            <label>Código del centro de costo</label>
+            <input @bind="@centroCostos.Codigo" type="number" class="form-control" placeholder="Ingrese el nuevo código del centro de costo" required disabled>
+
+        </div>
+        <div class="form-group mb-3">
+
+            <label>Nombre del centro de costo</label>
+            <input @bind="@centroCostos.NombreCentroCostos" type="text" class="form-control" placeholder="Ingrese el nuevo nombre del centro de costo" required>
+
+        </div>
+        <div class="form-group mb-3">
+
+            <label>Mensaje del centro de costo</label>
+            <input @bind="@centroCostos.Mensaje" type="text" class="form-control" placeholder="Ingrese el nuevo mensaje del centro de costo" required>
+
+        </div>
+
+        <div class="row col-6">
+            <div class="col-6 col-md-6">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+            <div class="col-6 col-md-6">
+                <a href="/centrocostos" class="btn btn-outline-secondary">Regresar</a>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+
+    [Parameter]
+    public int id { get; set; }
+
+    CentroCostos centroCostos = new CentroCostos();
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        int CodigoCentroCostos = id;
+
+        List<CentroCostos> ListCentroCostos = await APIService.GetCentroCostos();
+
+        CentroCostos CentroCostosFounded = ListCentroCostos.FirstOrDefault(data => data.Codigo == CodigoCentroCostos);
+
+        if(CentroCostosFounded != null)
+        {
+
+            centroCostos = CentroCostosFounded;
+
+        }
+
+    }
+
+    public async Task UpdateCentroCostos()
+    {
+
+        await APIService.UpdateCentroCostos(centroCostos);
+        Router.NavigateTo("/centrocostos");
+
+    }
+
+}

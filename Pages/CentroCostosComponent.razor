@@ -1,0 +1,82 @@
+﻿@page "/centrocostos"
+@using BlazorAppPrub.APIService
+@using Models
+
+@inject APIServiceProxy APIService
+
+<div class="d-flex flex-nowrap flex-column gap-2 p-4">
+    <h3>Lista de centro de costos</h3>
+
+    <div class="row col-6">
+        <div class="col-6 col-md-6">
+            <a href="/centrocostoscreate" class="btn btn-dark">Nuevo Centro Costos <i class="fa-solid fa-plus"></i></a>
+        </div>
+    </div>
+
+
+    <table class="table table-hover table-dark rounded-2">
+        <thead>
+            <tr>
+                <th class="rounded-start" scope="col">Código</th>
+                <th scope="col">Nombre del centro de costo</th>
+                <th class="rounded-end" scope="col">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in ListCentroCostos)
+            {
+                <tr>
+                    <th scope="row">@item.Codigo</th>
+                    <td>@item.NombreCentroCostos</td>
+                    <td>
+                        <a href="javascript:void(0);" class="btn btn-primary" onclick="viewProduct('Código: @item.Codigo', '@item.NombreCentroCostos')">Ver <i class="fa-solid fa-eye"></i></a>
+                        <a href="/centrocostosedit/@item.Codigo" class="btn btn-light">Editar <i class="fa-solid fa-pen-to-square"></i></a>
+                        <button @onclick="() => DeleteCentroCostos(item)" class="btn btn-danger">Eliminar <i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal único -->
+<div class="modal fade" id="viewProductModal" tabindex="-1" role="dialog" aria-labelledby="viewProductLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewProductName"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="hideProductModal()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="viewProductDescription"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideProductModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    List<CentroCostos> ListCentroCostos = new List<CentroCostos>();
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        ListCentroCostos = await APIService.GetCentroCostos();
+
+    }
+
+    public async void DeleteCentroCostos(CentroCostos CentroCostosToDelete)
+    {
+
+        await APIService.DeleteCentroCostos(CentroCostosToDelete);
+        await OnInitializedAsync();
+        StateHasChanged();
+
+    }
+
+}
+
+

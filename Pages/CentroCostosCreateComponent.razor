@@ -1,0 +1,59 @@
+﻿@page "/centrocostoscreate"
+@using BlazorAppPrub.APIService
+@using Models
+
+@inject APIServiceProxy APIService
+@inject NavigationManager Router
+
+<div class="d-flex flex-nowrap flex-column gap-2 p-4">
+    <h3>Crear Centro de Costos</h3>
+
+    <EditForm Model="@centroCostos" method="POST" OnValidSubmit="CreateCentroCostos">
+
+        <DataAnnotationsValidator />
+
+        <div class="form-group mb-3">
+
+            <label>Código del centro de costo</label>
+            <input @bind="@centroCostos.Codigo" type="number" class="form-control" placeholder="Ingrese el código del centro de costo" required>
+
+        </div>
+        <div class="form-group mb-3">
+
+            <label>Nombre del centro de costo</label>
+            <input @bind="@centroCostos.NombreCentroCostos" type="text" class="form-control" placeholder="Ingrese el nombre del centro de costo" required>
+
+        </div>
+        <div class="form-group mb-3">
+
+            <label>Mensaje del centro de costo</label>
+            <input @bind="@centroCostos.Mensaje" type="text" class="form-control" placeholder="Ingrese el mensaje del centro de costo" required>
+
+        </div>
+
+        <div class="row col-6">
+            <div class="col-6 col-md-6">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+            <div class="col-6 col-md-6">
+                <a href="/centrocostos" class="btn btn-outline-secondary">Regresar</a>
+            </div>
+        </div>
+
+    </EditForm>
+</div>
+
+@code {
+
+    CentroCostos centroCostos = new CentroCostos();
+
+    public async void CreateCentroCostos()
+    {
+
+        await APIService.InsertCentroCostos(centroCostos);
+
+        Router.NavigateTo("/centrocostos");
+
+    }
+
+}

@@ -1,4 +1,4 @@
-﻿@page "/Login"
+﻿@page "/"
 @using System.Text
 @inject Microsoft.Extensions.Logging.ILogger<LoginComponent> Logger
 @using Newtonsoft.Json
@@ -6,8 +6,7 @@
 @using System.Net
 @using APIService
 @inject IJSRuntime JSRuntime
-@inject HttpClient Http
-@inject IAPIService APIService
+@inject APIServiceProxy APIService
 @inject Blazored.SessionStorage.ISessionStorageService SessionStorage
 @inject NavigationManager Router
 
@@ -177,7 +176,7 @@
 
                 // Redirijo al home en caso de que la compañia seleccionada haya sido la correcta
                 await cerrarModal();
-                Router.NavigateTo("/home");
+                Router.NavigateTo("/centrocostos");
                 return;
 
             }
